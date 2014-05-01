@@ -1,0 +1,7 @@
+{
+    "work_dir": "/opt/stack/temp",
+    "nova_repo": "https://github.com/openstack/nova.git",
+    "xenapi_connection_url": "http://192.168.2.10",
+    "xenapi_connection_username": "root",
+    "xenapi_connection_password": "password"
+}
