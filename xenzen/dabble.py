@@ -16,19 +16,20 @@ def ssh_run(ssh, cmd):
 
 
 def dump_network(session, network):
-    print "Network: %s %s" % (network['uuid'], network['name_label'])
-    print "       :", network['name_description']
+    print "Network: %s '%s'" % (network['bridge'], network['name_label'])
+    if network['name_description']:
+        print "       :", network['name_description']
     for pif_ref in network['PIFs']:
         pif = session.xenapi.PIF.get_record(pif_ref)
-        print "PIF: %s %s %s %s %s" % (pif['uuid'], pif['DNS'], pif['gateway'],
-                                       pif['host'], pif['IP'])
+        host_ref = pif['host']
+        host = session.xenapi.host.get_record(host_ref)
+        print "PIF: %s %s %s %s" % (pif['DNS'], pif['gateway'],
+                                    host['hostname'], pif['IP'])
     for vif_ref in network['VIFs']:
         vif = session.xenapi.VIF.get_record(vif_ref)
         vm_ref = vif['VM']
         vm = session.xenapi.VM.get_record(vm_ref)
-        print "VIF: %s VM: %s/%s" % (vif['uuid'], vm['uuid'], vm['name_label'])
-
-    print
+        print "VM: %s" % (vm['name_label'])
 
 with open(sys.argv[1]) as f:
     config = json.load(f)
@@ -79,5 +80,7 @@ client.put(plugin_source, remote_path=plugin_target, recursive=True)
 ssh_run(ssh, "mkdir /images")
 
 # Check the pifs, vifs and networks ...
+print "--------------------------------"
 for ref, network in session.xenapi.network.get_all_records().items():
     dump_network(session, network)
+    print "--------------------------------"
