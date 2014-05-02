@@ -20,13 +20,17 @@ url = config['xenapi_connection_url']
 username = config['xenapi_connection_username']
 password = config['xenapi_connection_password']
 
+# from .../etc to /etc/*
+plugin_source = config.get("plugin_source", "nova/plugins/xenserver/xenapi/etc")
+plugin_target = config.get("plugin_target", "/")
+
 # Connect to XenServer
 session = XenAPI.Session(url)
 session.xenapi.login_with_password(username, password)
 print "XenServer:", url
 
 # Move into working directory ...
-work_dir = config['work_dir']
+work_dir = config.get('work_dir', '/opt/stack')
 if not os.path.isdir(work_dir):
     os.mkdir(work_dir)
 print "Working directory:", work_dir
@@ -34,7 +38,7 @@ os.chdir(work_dir)
 
 # Grab Nova code ...
 if not os.path.isdir('nova'):
-    repo_dir = config['nova_repo']
+    repo_dir = config.get('nova_repo', 'https://github.com/openstack/nova.git')
     print "Cloning:", repo_dir
     repo = git.Git().clone(repo_dir)
 else:
@@ -50,5 +54,13 @@ scp_password = config['scp_password']
 ssh.connect(scp_ip, username=scp_username, password=scp_password)
 client = scp.SCPClient(ssh.get_transport())
 
-ssh_run(ssh, "mkdir /root/temp")
-client.put("/opt/stack/xenzen", remote_path='/root/temp', recursive=True)
+print "scp %s to %s" % (plugin_source, plugin_target)
+ssh_run(ssh, "mkdir %s" % plugin_target)
+# File permissions are same as source.
+client.put(plugin_source, remote_path=plugin_target, recursive=True)
+
+# We need a /images directory on the host ...
+ssh_run(ssh, "mkdir /images")
+
+# Check the pifs, vifs and networks ...
+
